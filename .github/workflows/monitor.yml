@@ -38,6 +38,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/data
+          git add -f docs/data
           git diff --cached --quiet || git commit -m "data: FMCSA parity run $(date -u +%F)"
           git push
