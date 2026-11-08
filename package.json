@@ -1,0 +1,10 @@
+{
+  "name": "fmcsa-parity-monitor",
+  "private": true,
+  "description": "Weekly parity check of public FMCSA carrier data with LogiParity",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "logiparity": "1.2.1"
+  }
+}

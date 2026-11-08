@@ -1,0 +1,43 @@
+name: Weekly FMCSA parity check
+
+on:
+  schedule:
+    - cron: '0 7 * * 1' # Mondays 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - name: Fetch data and run LogiParity
+        run: |
+          for STATE in IA VT; do
+            ./scripts/fetch.sh "$STATE"
+            set +e
+            STATE="$STATE" npx logiparity check --config parity.yaml > "report-$STATE.log" 2>&1
+            echo $? > "report-$STATE.exit"
+            set -e
+            head -3 "report-$STATE.log"
+          done
+      - name: Summarize (aggregates only)
+        run: node scripts/summarize.mjs IA VT
+      - name: Publish results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          git diff --cached --quiet || git commit -m "data: FMCSA parity run $(date -u +%F)"
+          git push

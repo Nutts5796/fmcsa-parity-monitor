@@ -1,0 +1,149 @@
+# Weekly parity check of public FMCSA carrier data (data.transportation.gov, Socrata).
+# Read-only, no credentials. Run scripts/fetch.sh "$STATE" first, then:
+#   STATE=VT npx logiparity check --config parity.yaml
+#
+# census_api_vs_csv: the SAME dataset (Company Census File, az4n-8mr2), same filter, read twice:
+#   paginated JSON API vs CSV export. Expected result: no differences.
+# sms_vs_census: two DIFFERENT FMCSA publications describing the same carriers:
+#   SMS Input - Motor Carrier Census (kjg3-diqy, monthly CSA run) vs active Company Census records
+#   (daily). Differences are expected from snapshot timing and field definitions; they are not
+#   claims that either dataset is wrong.
+# Carrier names are deliberately not compared, and only aggregates are published.
+version: 1
+environment: test
+publicEnv: [STATE]
+allowedHosts: [data.transportation.gov]
+maxFindings: 50000
+entities:
+  - name: census_api_vs_csv
+    label: Carrier (Census API vs CSV)
+    pluralLabel: carriers
+    key: dot_number
+    sources:
+      api:
+        label: Census JSON API
+        type: rest
+        absentAsNull: true
+        baseUrl: https://data.transportation.gov
+        path: "/resource/az4n-8mr2.json?$select=dot_number,status_code,carrier_operation,phy_state,phy_zip,power_units,truck_units,bus_units,total_drivers,total_cdl,mcs150_date,add_date,mcs150_mileage,mcs150_mileage_year,hm_ind,safety_rating,fleetsize,classdef&$where=phy_state='${STATE}'&$order=dot_number"
+        items: "$[*]"
+        headers: { user-agent: "Mozilla/5.0 (compatible; fmcsa-parity-monitor)" }
+        timeoutMs: 120000
+        pagination: { type: offset, offsetParam: "$offset", sizeParam: "$limit", size: 5000, allowShortFirstPage: true }
+        fields:
+          dot_number: { path: $.dot_number, label: USDOT number }
+          status_code: { path: $.status_code, label: Status }
+          carrier_operation: { path: $.carrier_operation, label: Carrier operation }
+          phy_state: { path: $.phy_state, label: Physical state }
+          phy_zip: { path: $.phy_zip, label: Physical ZIP }
+          power_units: { path: $.power_units, label: Power units }
+          truck_units: { path: $.truck_units, label: Truck units }
+          bus_units: { path: $.bus_units, label: Bus units }
+          total_drivers: { path: $.total_drivers, label: Total drivers }
+          total_cdl: { path: $.total_cdl, label: CDL drivers }
+          mcs150_date: { path: $.mcs150_date, label: MCS-150 date }
+          add_date: { path: $.add_date, label: Add date }
+          mcs150_mileage: { path: $.mcs150_mileage, label: MCS-150 mileage }
+          mcs150_mileage_year: { path: $.mcs150_mileage_year, label: Mileage year }
+          hm_ind: { path: $.hm_ind, label: Hazmat indicator }
+          safety_rating: { path: $.safety_rating, label: Safety rating }
+          fleetsize: { path: $.fleetsize, label: Fleet size class }
+          classdef: { path: $.classdef, label: Classification }
+      csv:
+        label: Census CSV export
+        type: csv
+        file: ./data/census_${STATE}.csv
+        fields:
+          dot_number: dot_number
+          status_code: status_code
+          carrier_operation: carrier_operation
+          phy_state: phy_state
+          phy_zip: phy_zip
+          power_units: power_units
+          truck_units: truck_units
+          bus_units: bus_units
+          total_drivers: total_drivers
+          total_cdl: total_cdl
+          mcs150_date: mcs150_date
+          add_date: add_date
+          mcs150_mileage: mcs150_mileage
+          mcs150_mileage_year: mcs150_mileage_year
+          hm_ind: hm_ind
+          safety_rating: safety_rating
+          fleetsize: fleetsize
+          classdef: classdef
+    compare:
+      status_code: { type: enum }
+      carrier_operation: { type: enum }
+      power_units: { type: number }
+      truck_units: { type: number }
+      bus_units: { type: number }
+      total_drivers: { type: number }
+      total_cdl: { type: number }
+      mcs150_mileage: { type: number }
+    aggregates:
+      - { name: active_count, label: Active carriers, type: count, where: { status_code: A } }
+      - { name: power_units_total, label: Total power units, type: sum, field: power_units }
+      - { name: drivers_total, label: Total drivers, type: sum, field: total_drivers }
+    failOn: [missing, extra, mismatch, aggregate, duplicate, invalid]
+
+  - name: sms_vs_census
+    label: Active carrier (SMS census vs Company Census)
+    pluralLabel: carriers
+    key: dot_number
+    sources:
+      sms:
+        label: SMS census API (monthly)
+        type: rest
+        absentAsNull: true
+        baseUrl: https://data.transportation.gov
+        path: "/resource/kjg3-diqy.json?$select=dot_number,carrier_operation,hm_flag,phy_state,phy_zip,mcs150_date,mcs150_mileage,mcs150_mileage_year,nbr_power_unit,driver_total&$where=phy_state='${STATE}'&$order=dot_number"
+        items: "$[*]"
+        headers: { user-agent: "Mozilla/5.0 (compatible; fmcsa-parity-monitor)" }
+        timeoutMs: 120000
+        pagination: { type: offset, offsetParam: "$offset", sizeParam: "$limit", size: 5000, allowShortFirstPage: true }
+        fields:
+          dot_number: { path: $.dot_number, label: USDOT number }
+          carrier_operation: { path: $.carrier_operation, label: Carrier operation }
+          hazmat: { path: $.hm_flag, label: Hazmat flag }
+          phy_state: { path: $.phy_state, label: Physical state }
+          phy_zip: { path: $.phy_zip, label: Physical ZIP }
+          mcs150_date: { path: $.mcs150_date, label: MCS-150 date }
+          mcs150_mileage: { path: $.mcs150_mileage, label: MCS-150 mileage }
+          mcs150_mileage_year: { path: $.mcs150_mileage_year, label: Mileage year }
+          power_units: { path: $.nbr_power_unit, label: Power units }
+          total_drivers: { path: $.driver_total, label: Total drivers }
+      census:
+        label: Company Census CSV export (active only)
+        type: csv
+        file: ./data/census_${STATE}.csv
+        where: { status_code: A }
+        fields:
+          dot_number: dot_number
+          status_code: status_code
+          carrier_operation: carrier_operation
+          hazmat: hm_ind
+          phy_state: phy_state
+          phy_zip: phy_zip
+          mcs150_date: mcs150_date
+          mcs150_mileage: mcs150_mileage
+          mcs150_mileage_year: mcs150_mileage_year
+          power_units: power_units
+          total_drivers: total_drivers
+    compare:
+      carrier_operation: { type: enum }
+      hazmat: { type: enum, map: { "true": Y, "false": N } }
+      mcs150_date: { type: date, format: { sms: "dd-MMM-yy", census: "yyyyMMdd" } }
+      power_units: { type: number }
+      total_drivers: { type: number }
+      mcs150_mileage: { type: number }
+    aggregates:
+      - { name: carrier_count, label: Active carriers, type: count }
+      - { name: power_units_total, label: Total power units, type: sum, field: power_units }
+      - { name: drivers_total, label: Total drivers, type: sum, field: total_drivers }
+    failOn: [missing, extra, mismatch, aggregate, duplicate, invalid]
+
+report:
+  outputs: [console, json]
+  dir: ./report-${STATE}
+  displayTimezone: UTC

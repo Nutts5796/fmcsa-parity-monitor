@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FMCSA Data Parity Monitor</title>
+<meta name="description" content="A weekly, reproducible parity check of public FMCSA carrier registration data, run with the open-source LogiParity CLI.">
+<style>
+:root{--bg:#f7f8fa;--panel:#fff;--ink:#14181f;--muted:#5b6472;--line:#e3e6eb;--ok:#0f8a5f;--warn:#b45309;--bad:#b42318;--accent:#2457c5}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1318;--panel:#171c23;--ink:#e8ebf0;--muted:#9aa3b2;--line:#29303a;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--accent:#7aa2ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+h2{font-size:21px;margin:36px 0 12px}
+h3{font-size:17px;margin:0 0 8px}
+p{margin:0 0 12px}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.big{font-size:28px;font-weight:700;line-height:1.1}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+ul.causes{margin:8px 0 0;padding-left:18px;font-size:14px}
+ul.causes li{margin-bottom:6px}
+.note{border-left:3px solid var(--line);padding-left:12px}
+footer{margin-top:40px;font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>FMCSA Data Parity Monitor</h1>
+<p class="muted">A weekly, reproducible check of public FMCSA carrier registration data on data.transportation.gov, run with the open-source <a href="https://github.com/Nutts5796/logiparity">LogiParity</a> CLI.</p>
+
+<div class="note">
+<p><strong>What is checked.</strong> (1) The Company Census File read twice, through its paginated JSON API and as a CSV export, with the same filter. These should always agree. (2) The monthly SMS motor carrier census against the active records of the daily Company Census, joined by USDOT number. These are different publications with different refresh schedules and, for some fields, different definitions, so differences are expected. They are not claims that either dataset is wrong.</p>
+<p><strong>What is published.</strong> Counts, totals and cause summaries only. Carrier names are not compared and no per-carrier records are published.</p>
+</div>
+
+<h2>Latest run</h2>
+<p id="meta" class="muted">Loading…</p>
+<div id="latest" class="grid"></div>
+
+<h2>History</h2>
+<div class="scroll"><table id="history"><thead><tr><th>Run (UTC)</th><th>State</th><th>Census version</th><th>SMS version</th><th>API vs CSV</th><th>SMS vs Census</th><th>LogiParity</th></tr></thead><tbody></tbody></table></div>
+
+<footer class="muted">
+<p>Method and the first full analysis: <a href="https://dev.to/nutts5796/two-fmcsa-files-one-carrier-different-answers-what-a-parity-check-found-in-public-us-trucking-3kp0">Two FMCSA files, one carrier, different answers</a>. Source, configuration and raw summaries: <a href="https://github.com/Nutts5796/fmcsa-parity-monitor">github.com/Nutts5796/fmcsa-parity-monitor</a>.</p>
+<p>Data: Federal Motor Carrier Safety Administration, published on data.transportation.gov. This project is independent and not affiliated with FMCSA or the U.S. Department of Transportation. Maintained by Sergei Orekhovskii.</p>
+</footer>
+</main>
+<script>
+const fmt = (n) => (typeof n === 'number' ? n.toLocaleString('en-US') : n ?? '—');
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const day = (iso) => (iso ? iso.slice(0, 10) : '—');
+function entityLine(e) {
+  if (!e) return '<span class="muted">no report</span>';
+  return e.findings === 0 ? '<span class="ok">0 differences</span>' : `<span class="warn">${fmt(e.findings)} differences</span>`;
+}
+function card(state, s) {
+  const a = s.entities?.census_api_vs_csv, b = s.entities?.sms_vs_census;
+  let html = `<div class="card"><h3>${esc(state)}</h3>`;
+  if (s.error) html += `<p class="bad">${esc(s.error)}</p>`;
+  if (a) html += `<p><strong>API vs CSV export</strong><br><span class="big ${a.findings === 0 ? 'ok' : 'warn'}">${fmt(a.findings)}</span> differences across ${fmt(a.counts?.api)} API and ${fmt(a.counts?.csv)} CSV records</p>`;
+  if (b) {
+    const t = b.byType || {};
+    html += `<p><strong>SMS census vs Company Census</strong><br><span class="big">${fmt(b.findings)}</span> differences<br><span class="muted">${fmt(b.counts?.sms)} SMS carriers, ${fmt(b.counts?.census)} active Census carriers; only in SMS ${fmt(t.missing_in_source ?? 0)}, only in Census ${fmt(t.extra_in_source ?? 0)}, field differences ${fmt(t.field_mismatch ?? 0)}</span></p>`;
+    if (b.causes?.length) html += `<p class="muted">Largest cause groups (automatic, see method):</p><ul class="causes">${b.causes.slice(0, 6).map((c) => `<li>${esc(c.summary)}</li>`).join('')}</ul>`;
+  }
+  return html + '</div>';
+}
+Promise.all([fetch('data/latest.json').then((r) => r.json()), fetch('data/history.json').then((r) => r.json())])
+  .then(([latest, history]) => {
+    document.getElementById('meta').textContent = `Run ${latest.runAt.replace('T', ' ').slice(0, 16)} UTC with LogiParity ${latest.logiparityVersion}. Company Census version ${day(latest.datasets.companyCensus)}, SMS census version ${day(latest.datasets.smsCensus)}.`;
+    document.getElementById('latest').innerHTML = Object.entries(latest.states).map(([k, v]) => card(k, v)).join('');
+    const rows = [];
+    for (const run of [...history].reverse())
+      for (const [state, s] of Object.entries(run.states))
+        rows.push(`<tr><td>${esc(run.runAt.replace('T', ' ').slice(0, 16))}</td><td>${esc(state)}</td><td>${day(run.datasets.companyCensus)}</td><td>${day(run.datasets.smsCensus)}</td><td>${s.error && !s.entities?.census_api_vs_csv ? '<span class="bad">error</span>' : entityLine(s.entities?.census_api_vs_csv)}</td><td>${entityLine(s.entities?.sms_vs_census)}</td><td>${esc(run.logiparityVersion)}</td></tr>`);
+    document.querySelector('#history tbody').innerHTML = rows.join('');
+  })
+  .catch(() => {
+    document.getElementById('meta').textContent = 'No results yet.';
+  });
+</script>
+</body>
+</html>
