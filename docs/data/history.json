@@ -1389,5 +1389,352 @@
     }
    }
   }
+ },
+ {
+  "runAt": "2026-11-23T18:53:34.037Z",
+  "logiparityVersion": "1.2.1",
+  "datasets": {
+   "companyCensus": "2026-11-22T12:15:50+00:00",
+   "smsCensus": "2026-11-13T07:13:44+00:00"
+  },
+  "states": {
+   "IA": {
+    "exitCode": 1,
+    "serverCounts": {
+     "az4n-8mr2 where phy_state='IA'": 58122,
+     "az4n-8mr2 where phy_state='IA' AND status_code='A'": 26854,
+     "kjg3-diqy where phy_state='IA'": 25824
+    },
+    "entities": {
+     "census_api_vs_csv": {
+      "reference": "api",
+      "counts": {
+       "api": 58122,
+       "csv": 58122
+      },
+      "findings": 0,
+      "byType": {},
+      "byField": {},
+      "aggregates": [
+       {
+        "name": "active_count",
+        "values": {
+         "api": 26854,
+         "csv": 26854
+        }
+       },
+       {
+        "name": "power_units_total",
+        "values": {
+         "api": 699802,
+         "csv": 699802
+        }
+       },
+       {
+        "name": "drivers_total",
+        "values": {
+         "api": 225173,
+         "csv": 225173
+        }
+       }
+      ],
+      "causes": []
+     },
+     "sms_vs_census": {
+      "reference": "sms",
+      "counts": {
+       "sms": 25824,
+       "census": 26854
+      },
+      "findings": 4612,
+      "byType": {
+       "aggregate_mismatch": 3,
+       "field_mismatch": 3413,
+       "missing_in_source": 83,
+       "extra_in_source": 1113
+      },
+      "byField": {
+       "hazmat": 1704,
+       "power_units": 1132,
+       "mcs150_date": 231,
+       "mcs150_mileage": 104,
+       "mcs150_mileage_year": 108,
+       "total_drivers": 92,
+       "phy_zip": 24,
+       "carrier_operation": 18
+      },
+      "aggregates": [
+       {
+        "name": "carrier_count",
+        "values": {
+         "sms": 25824,
+         "census": 26854
+        }
+       },
+       {
+        "name": "power_units_total",
+        "values": {
+         "sms": 551815,
+         "census": 558513
+        }
+       },
+       {
+        "name": "drivers_total",
+        "values": {
+         "sms": 139010,
+         "census": 133134
+        }
+       }
+      ],
+      "causes": [
+       {
+        "field": "hazmat",
+        "kind": "value_mapping",
+        "count": 1684,
+        "summary": "1,684 of 25,718 carriers with hazmat flag N in SMS census API (monthly) show Y in Company Census CSV export (active only); 23,970 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 160,
+        "summary": "160 power units values in Company Census CSV export (active only) are 2 where SMS census API (monthly) has 1. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 140,
+        "summary": "140 power units values in Company Census CSV export (active only) are 1 where SMS census API (monthly) has 0. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 46,
+        "summary": "46 power units values in Company Census CSV export (active only) are 2 where SMS census API (monthly) has 0. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 42,
+        "summary": "42 power units values in Company Census CSV export (active only) are 4 where SMS census API (monthly) has 2. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 31,
+        "summary": "31 power units values in Company Census CSV export (active only) are 3 where SMS census API (monthly) has 1. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 29,
+        "summary": "29 power units values in Company Census CSV export (active only) are 3 where SMS census API (monthly) has 2. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "mcs150_mileage_year",
+        "kind": "value_mapping",
+        "count": 24,
+        "summary": "24 of 5,516 carriers with mileage year 2024 in SMS census API (monthly) show 2026 in Company Census CSV export (active only); 5,447 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 21,
+        "summary": "21 power units values in Company Census CSV export (active only) are 6 where SMS census API (monthly) has 3. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "hazmat",
+        "kind": "value_mapping",
+        "count": 20,
+        "summary": "20 of 106 carriers with hazmat flag Y in SMS census API (monthly) show N in Company Census CSV export (active only); 67 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "mcs150_mileage_year",
+        "kind": "value_mapping",
+        "count": 17,
+        "summary": "17 of 2,038 carriers with mileage year 2023 in SMS census API (monthly) show 2026 in Company Census CSV export (active only); 1,998 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "mcs150_mileage_year",
+        "kind": "value_mapping",
+        "count": 16,
+        "summary": "16 of 4,287 carriers with mileage year 2025 in SMS census API (monthly) show 2026 in Company Census CSV export (active only); 4,248 match. Likely a lagging update or a different definition of the field."
+       }
+      ]
+     }
+    },
+    "coverage": {
+     "explained": 2499,
+     "needsReview": 2113
+    }
+   },
+   "VT": {
+    "exitCode": 1,
+    "serverCounts": {
+     "az4n-8mr2 where phy_state='VT'": 8381,
+     "az4n-8mr2 where phy_state='VT' AND status_code='A'": 2371,
+     "kjg3-diqy where phy_state='VT'": 2290
+    },
+    "entities": {
+     "census_api_vs_csv": {
+      "reference": "api",
+      "counts": {
+       "api": 8381,
+       "csv": 8381
+      },
+      "findings": 0,
+      "byType": {},
+      "byField": {},
+      "aggregates": [
+       {
+        "name": "active_count",
+        "values": {
+         "api": 2371,
+         "csv": 2371
+        }
+       },
+       {
+        "name": "power_units_total",
+        "values": {
+         "api": 124382,
+         "csv": 124382
+        }
+       },
+       {
+        "name": "drivers_total",
+        "values": {
+         "api": 25880,
+         "csv": 25880
+        }
+       }
+      ],
+      "causes": []
+     },
+     "sms_vs_census": {
+      "reference": "sms",
+      "counts": {
+       "sms": 2290,
+       "census": 2371
+      },
+      "findings": 751,
+      "byType": {
+       "aggregate_mismatch": 3,
+       "field_mismatch": 653,
+       "extra_in_source": 88,
+       "missing_in_source": 7
+      },
+      "byField": {
+       "power_units": 119,
+       "hazmat": 472,
+       "mcs150_date": 25,
+       "mcs150_mileage": 11,
+       "mcs150_mileage_year": 11,
+       "total_drivers": 13,
+       "carrier_operation": 2
+      },
+      "aggregates": [
+       {
+        "name": "carrier_count",
+        "values": {
+         "sms": 2290,
+         "census": 2371
+        }
+       },
+       {
+        "name": "power_units_total",
+        "values": {
+         "sms": 10786,
+         "census": 11313
+        }
+       },
+       {
+        "name": "drivers_total",
+        "values": {
+         "sms": 11423,
+         "census": 11466
+        }
+       }
+      ],
+      "causes": [
+       {
+        "field": "hazmat",
+        "kind": "value_mapping",
+        "count": 468,
+        "summary": "468 of 2,274 carriers with hazmat flag N in SMS census API (monthly) show Y in Company Census CSV export (active only); 1,801 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 26,
+        "summary": "26 power units values in Company Census CSV export (active only) are 2 where SMS census API (monthly) has 1. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "mcs150_mileage_year",
+        "kind": "value_mapping",
+        "count": 5,
+        "summary": "5 of 602 carriers with mileage year 2024 in SMS census API (monthly) show 2026 in Company Census CSV export (active only); 593 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 5,
+        "summary": "5 power units values in Company Census CSV export (active only) are 3 where SMS census API (monthly) has 2. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "hazmat",
+        "kind": "value_mapping",
+        "count": 4,
+        "summary": "4 of 16 carriers with hazmat flag Y in SMS census API (monthly) show N in Company Census CSV export (active only); 10 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 4,
+        "summary": "4 power units values in Company Census CSV export (active only) are 1 where SMS census API (monthly) has 0. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 4,
+        "summary": "4 power units values in Company Census CSV export (active only) are 6 where SMS census API (monthly) has 4. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "mcs150_mileage_year",
+        "kind": "value_mapping",
+        "count": 3,
+        "summary": "3 of 278 carriers with mileage year 2023 in SMS census API (monthly) show 2025 in Company Census CSV export (active only); 273 match. Likely a lagging update or a different definition of the field."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 3,
+        "summary": "3 power units values in Company Census CSV export (active only) are 2 where SMS census API (monthly) has 0. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 3,
+        "summary": "3 power units values in Company Census CSV export (active only) are 4 where SMS census API (monthly) has 1. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 3,
+        "summary": "3 power units values in Company Census CSV export (active only) are 4 where SMS census API (monthly) has 2. Repeated numeric values differ between sources."
+       },
+       {
+        "field": "power_units",
+        "kind": "number_change",
+        "count": 3,
+        "summary": "3 power units values in Company Census CSV export (active only) are 4 where SMS census API (monthly) has 3. Repeated numeric values differ between sources."
+       }
+      ]
+     }
+    },
+    "coverage": {
+     "explained": 540,
+     "needsReview": 211
+    }
+   }
+  }
  }
 ]
